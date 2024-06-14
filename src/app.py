@@ -10,6 +10,9 @@ from api.models import db
 from api.routes import api
 from api.admin import setup_admin
 from api.commands import setup_commands
+import cloudinary
+import cloudinary.uploader
+import cloudinary.api
 
 # from models import Person
 
@@ -18,6 +21,20 @@ static_file_dir = os.path.join(os.path.dirname(
     os.path.realpath(__file__)), '../public/')
 app = Flask(__name__)
 app.url_map.strict_slashes = False
+
+
+app.config['CLOUD_NAME'] = os.getenv("CLOUD_NAME")
+app.config['API_kEY'] = os.getenv("API_kEY")
+app.config['API-SECRET'] = os.getenv("API-SECRET")
+
+
+cloudinary.config( 
+  cloud_name = app.config['CLOUD_NAME'], 
+  api_key = app.config['API_kEY'], 
+  api_secret = app.config['API-SECRET'],
+  secure = True
+)
+
 
 # database condiguration
 db_url = os.getenv("DATABASE_URL")
@@ -55,6 +72,12 @@ def sitemap():
     if ENV == "development":
         return generate_sitemap(app)
     return send_from_directory(static_file_dir, 'index.html')
+
+@app.route('/img' , methods=["POST"])
+def upload_image():
+    img = request.files["img"]
+    img_url = cloudinary.uploader.upload(img)
+    return jsonify({"img_url": img_url["url"]}) , 200
 
 # any other endpoint will try to serve it like a static file
 
